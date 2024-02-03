@@ -1,0 +1,220 @@
+<html>
+<head>
+    <title>Free Music Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #1A1A1A;
+            color: white;
+        }
+        .container {
+            max-width: 900px;
+            padding-top: 5%;
+
+        }
+        .card {
+            background: linear-gradient(145deg, #232323, #1A1A1A);
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 0 20px #D63384;
+        }
+        .card-header {
+            background-color: transparent;
+            border-bottom: none;
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        .btn-primary {
+            background-color: #D63384;
+            border: none;
+            border-radius: 50px;
+            
+        }
+        .btn-primary:hover {
+            background-color: #C82373;
+        }
+        .form-control {
+            background-color: transparent;
+            border-color: whitesmoke;
+            color: white;
+            
+        }
+        .form-control::placeholder {
+            color: #ADB5BD;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            color: white;
+            background-color: #1A1A1A;
+        }
+        .form-label{
+            color: #FFFFFF;
+        }
+        .card-title {
+            color: white; /* Ensure the text is white */
+            font-weight: bold; /* Make the text bold */
+        }
+        .audio-player {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .audio-player audio {
+            width: 100%;
+            outline: none;
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 15px;
+            border-radius: 5px;
+            background: #D63384;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        .slider:hover {
+            opacity: 1;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            cursor: pointer;
+            box-shadow: 0 0 10px #D63384;
+        }
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            cursor: pointer;
+            box-shadow: 0 0 10px #D63384;
+        }
+        .download-icon {
+            color: #D63384;
+            font-size: 24px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        #loader{
+            display: none;
+
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4 "><b>Free Music Generator</b></h1>
+        <p class="text-center mb-5">Create songs from text within seconds by describing the music you wish to generate.</p>
+        <div class="card mx-auto mb-5">
+            <div class="card-header">
+            </div>
+            <div class="card-body">
+                <h4 class="card-title mb-4">Put your Text Prompt</h4>
+                <div class="mb-3">
+                    <textarea class="form-control" id="description" rows="3" placeholder="For example: Ed0-25 major g melodies that sound triumphant and cinematic. Leading up to a crescendo that resolves in a 9th harmonic."></textarea>
+                </div>
+                <div class="mb-5">
+                    <label for="durationSlider" class="form-label">Duration (0-20 seconds)</label>
+                    <input type="range" class="slider" id="durationSlider" min="0" max="20" value="10">
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" id="generateButton" type="button">
+                        <b>Generate</b> <i class="fas fa-rocket"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="loader" class="text-center">
+            <div class="spinner-grow text-warning" style="width: 8rem; height: 8rem;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <br>
+            <br>
+            <h6>Generating your Music....................</h6>
+        </div>
+        <div class="audio-player" id="audioPlayer">
+            <h4 class="text-center mb-3">AI Generated Music Below</h4>
+            <div class="row">
+                <div class="col-sm-11">
+                    <div id="waveform"></div>
+                </div>
+                <div class="col-sm-1 pt-3">
+                    <div class="text-end mt-4">
+                        <a href="" id="downloadLink" class="download-icon" download="generated-music.mp3">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        var wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            waveColor: 'violet',
+            progressColor: 'purple',
+            cursorColor: 'navy'
+        });
+        document.getElementById('generateButton').addEventListener('click', async function() {
+            const prompt = document.getElementById('description').value.trim(); 
+            const duration = document.getElementById('durationSlider').value;
+            const loader = document.getElementById('loader');
+
+            if (!prompt) {
+                Swal.fire({
+                    text: "Please enter a description for the music generation.",
+                    icon: "error"
+                });
+            return; // Stop the function from proceeding further
+        }
+
+            const formData = new FormData();
+            formData.append('prompt', prompt);
+            formData.append('duration', duration);
+
+            try {
+                loader.style.display = "block";
+                const response = await fetch('/generate-music', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    const downloadLink = document.getElementById('downloadLink');
+                    
+                    // Update the audio source and download link
+                    // audioPlayer.querySelector('source').src = result.url; // Assuming 'url' is the key in your JSON response containing the music file URL
+                    // audioPlayer.querySelector('audio').load();
+                    wavesurfer.load(result.url);
+                    audioPlayer.style.display = 'block';
+                    
+                    downloadLink.href = result.url;
+                } else {
+                    console.error('Server returned an error response');
+                }
+
+            } catch (error) {
+                console.error('Failed to fetch:', error);
+            }
+            loader.style.display = 'none';
+        });
+        // Play the audio when it's ready
+        wavesurfer.on('ready', function() {
+            wavesurfer.play();
+        });
+    </script>
+</body>
+</html>
