@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import openai
+from openai import OpenAI
 
 app = FastAPI()
 
