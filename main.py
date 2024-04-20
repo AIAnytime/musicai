@@ -1,43 +1,32 @@
-from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import FileResponse,  JSONResponse
-import replicate
-import os
-from dotenv import load_dotenv
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from openai import OpenAI
+from transformers import pipeline
+import torch
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
 
+# Load environment variables
 load_dotenv()
-replicate.api_token = os.getenv("REPLICATE_API_TOKEN")
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
+# Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Load HTML templates
 templates = Jinja2Templates(directory="templates")
 
+# Function to generate lyrics using Hugging Face's GPT-NEO model
 def generate_lyrics(prompt):
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a music lyrics writer and your task is to write lyrics of music under 30 words based on user's prompt. Just return the lyrics and nothing else."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.7,
-        max_tokens=50,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0
-    )
-    output = response.choices[0].message.content
+    # Initialize text generation pipeline with GPT-NEO model
+    generator = pipeline('text-generation', model='EleutherAI/gpt-neo-1.3B')
+    # Generate lyrics based on the prompt
+    response = generator(prompt, max_length=50, temperature=0.7, do_sample=True)
+    # Extract generated text from response
+    output = response[0]['generated_text']
+    # Format the generated lyrics
     cleaned_output = output.replace("\n", " ")
     formatted_lyrics = f"♪ {cleaned_output} ♪"
     return formatted_lyrics
